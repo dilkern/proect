@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  roles     Role[]
+  Token     Token[]
+  CartItem  CartItem[]
+  Order     Order[]
+
+  @@map("users")
+}
+
+model Token {
+  token     String   @unique
+  exp       DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  userAgent String   @map("user_agent")
+
+  @@map("tokens")
+}
+
+model Product {
+  id        String      @id @default(uuid())
+  name      String
+  price     String
+  quantity  String
+  imageUrl  String?
+  image     Bytes?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  CartItem  CartItem[]
+  OrderItem OrderItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  createdAt DateTime    @default(now()) @map("created_at")
+  items     OrderItem[]
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
